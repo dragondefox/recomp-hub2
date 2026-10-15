@@ -11,6 +11,7 @@
 <style>
 :root{color-scheme:dark;--bg:#0b0b0f;--card:#14141a;--card2:#1b1b23;--line:#262631;--text:#f2f2f7;--muted:#8e8e9e;--acc:#00e676;--blue:#29b6f6;--org:#ffa726;--pur:#b388ff;--red:#ff5252;--onacc:#000;
 box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body.oled{--bg:#000000;--card:#0a0a0c;--card2:#121216;--line:#1c1c24}
 @media (prefers-color-scheme:light){:root{color-scheme:light;--bg:#f3f3f7;--card:#fff;--card2:#eeeef3;--line:#dcdce4;--text:#14141a;--muted:#6b6b7a;--acc:#00a152;--blue:#0277bd;--org:#e65100;--pur:#6a3fd0;--red:#d32f2f;--onacc:#fff}}
 html{height:100%}*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;padding-bottom:96px;font-size:15px}
@@ -53,7 +54,9 @@ input:focus{border-color:var(--acc)}
 .log{display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid var(--line);font-size:.78rem;align-items:center}
 .log:last-child{border:0}.log em{font-style:normal;color:var(--acc);font-weight:700;white-space:nowrap}.log .x{position:static}
 .ex{background:var(--card2);border-radius:12px;padding:12px;margin-bottom:10px}
-.ex b{font-size:.86rem}.ex .t{font-size:.7rem;color:var(--blue);font-weight:700;white-space:nowrap}
+.ex b{font-size:.86rem;cursor:pointer;color:var(--blue)}
+.ex b:hover{text-decoration:underline}
+.ex .t{font-size:.7rem;color:var(--blue);font-weight:700;white-space:nowrap}
 .ex .h{font-size:.7rem;color:var(--muted);margin:4px 0 6px}.ex .d{font-size:.7rem;color:var(--org);margin-bottom:6px}
 .ex .du-note{font-size:.7rem;color:var(--blue);font-weight:600;margin-bottom:6px}
 .sets{display:flex;gap:6px}.sets input{flex:1.3}
@@ -88,6 +91,8 @@ nav{background:color-mix(in srgb,var(--card) 85%,transparent);backdrop-filter:bl
 nav button i{width:52px;height:28px;border-radius:14px;display:grid;place-items:center}
 nav button.on i{background:color-mix(in srgb,var(--acc) 18%,transparent)}
 svg text{fill:var(--muted);font-size:9px}
+.plate-calc{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:10px;margin-top:10px;font-size:.78rem}
+.plate-row{display:flex;justify-content:space-between;margin-top:4px;font-weight:600}
 </style>
 </head>
 <body>
@@ -135,12 +140,13 @@ const SHK={shM:['Shake: 500 ml mleka 2% + 30 g WPC',370,41],whey:['Odżywka WPC 
 const W={
 PULL:['Pull · plecy, tył barku, biceps',[['p1','Podciąganie','3×5-8','BW×7, 6, 5',0,'BW'],['p2','Wiosłowanie hantlą w podporze','3×8-10','53×10, 10, 9',1,'53'],['p3','Pullover z hantlą','3×9-12','18.5×12, 20.5×12, 22.5×9',0,'22.5'],['p4','Odwrotne rozpiętki (hantle)','3×9-12','9×12, 11×12, 13×9',1,'13'],['p5','Uginanie na ławce skośnej (hantle)','3×6-11','21×11, 6, 6',1,'21']]],
 PUSH:['Push · klatka, barki, triceps, brzuch',[['u1','Wyciskanie leżąc (sztanga)','1 rozgrz. + 3','30×12 | 70×8, 72.5×4, 72.5×4',0,'72.5'],['u2','Wyciskanie skośne (hantle)','3×5-8','45×8, 49×5, 49×4',1,'49'],['u3','Wznosy bokiem (hantle)','3×9-12','17×12, 11, 9',1,'17'],['u4','Rozpiętki skośne (hantle)','3×8-12','17×14, 31×10, 31×8',1,'31'],['u5','Wyciskanie francuskie (sztanga)','3×6-10','25×10, 27.5×9, 30×6',0,'30'],['u6','Dragon flag','3×6-8','BW×6, 7, 6',0,'BW']]],
-UPPER:['Upper · cała góra, siła',[['g1','Podciąganie nachwytem','3×5-7','BW×7, 6, 5',0,'BW'],['g2','Wyciskanie leżąc (sztanga)','1 rozgrz. + 3','35×12 | 70×6, 70×5, 70×3',0,'70'],['g3','OHP (sztanga)','3×5-8','32.5×8, 35×5, 35×7',0,'35'],['g4','Wiosłowanie w opadzie','3×6-8','45×8, 47.5×5, 47.5×7',0,'47.5'],['g5','Wyciskanie francuskie','3×7-10','22.5×8, 27.5×8, 27.5×7',0,'27.5'],['g6','Spider curl (sztanga)','3×6-10','22.5×8, 8, 6',0,'22.5'],['g7','Skręty rosyjskie (opcj.)','3×12-16','15×10, 16, 16',0,'15']]],
+UPPER:['Upper · cała góra, siła',[['g1','Podciąganie nachwytem','3×5-7','BW×7, 6, 5',0,'BW'],['g2','Wyciskanie leżąc (sztanga)','1 rozgrz. + 3','35×12 | 70×6, 70×5, 70×3',0,'70'],['g3','OHP (sztanga)','3×5-8','32.5×8, 35×5, 35×7',0,'35'],['g4','Wiosłowanie w opadzie','3×6-8','45×8, 47.5×5, 47.5×7',0,'47.5'],['g5','Wyciskanie francuskie','3×7-10','22.5×8, 27.5×8, 27.5×7',0,'25'],['g6','Spider curl (sztanga)','3×6-10','22.5×8, 8, 6',0,'22.5'],['g7','Skręty rosyjskie (opcj.)','3×12-16','15×10, 16, 16',0,'15']]],
 LEGS:['Legs · dół ciała (opcjonalnie)',[['l1','Przysiad ze sztangą','2 rozgrz. + 3','50×8, 55×8, 60×3',0,'60'],['l2','Martwy ciąg','3-4×8','50×10, 60×8, 65×8',0,'65'],['l3','Nordic curl / wspięcia','3 serie','BW×8, 8',0,'BW']]]};
 // ---------- STAN ----------
 const KEY='recomp2';
-const def=()=>({g:{kcal:2350,p:180,water:3,steps:8000,start:88,target:79},days:{},wh:{},ew:{},tiles:[],rec:[],cx:{},hid:{},nc:{},hist:{},pr:{},cpl:{},me:{},runs:[],tab:'home',wk:'PULL',cat:'st',m:1});
+const def=()=>({g:{kcal:2350,p:180,water:3,steps:8000,start:88,target:79,oled:false},days:{},wh:{},ew:{},tiles:[],rec:[],cx:{},hid:{},nc:{},hist:{},pr:{},cpl:{},me:{},runs:[],tab:'home',wk:'PULL',cat:'st',m:1});
 let S;try{S={...def(),...JSON.parse(localStorage.getItem(KEY)||'{}')}}catch(e){S=def()}
+if(S.g.oled)document.body.classList.add('oled');
 const $=s=>document.querySelector(s),esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const todayKey=()=>new Date().toLocaleDateString('sv');
 let curDate=todayKey();
@@ -185,6 +191,16 @@ const defSets=tg=>{const m=String(tg).match(/(\d)\D*rozgrz\.\s*\+\s*(\d)/);retur
 const nSets=(id,tg)=>S.nc[id]??defSets(tg);
 function ring(v,m){const r=42,c=2*Math.PI*r,o=c*(1-Math.min(1,v/m));return `<svg class="ring" viewBox="0 0 100 100"><circle cx="50" cy="50" r="${r}" fill="none" stroke="var(--card2)" stroke-width="9"/><circle cx="50" cy="50" r="${r}" fill="none" stroke="${v>m?'var(--red)':'var(--acc)'}" stroke-width="9" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${o}" transform="rotate(-90 50 50)"/><text x="50" y="52" text-anchor="middle" style="fill:var(--text);font-size:20px;font-weight:800">${v}</text><text x="50" y="66" text-anchor="middle" style="font-size:8px">kcal</text></svg>`}
 const dual=w=>{const v=parseFloat(String(w).replace(',','.'));return v>0?`⚖︎ Łącznie ${v} kg = po ${+(v/2).toFixed(2)} kg na rękę`:'⚖︎ Wpisz łączny ciężar obu hantli'};
+let calcMode = 'bar';
+const calcPlates=(kg, mode=calcMode)=>{
+  const base = mode==='bar' ? 20 : 2.5;
+  if(kg<=base) return mode==='bar' ? 'Sama sztanga (20 kg)' : 'Sam gryf hantli (2.5 kg)';
+  let rem=(kg-base)/2;
+  if(rem<0) return 'Zbyt mały ciężar';
+  const ps=[20,15,10,5,2.5,1.25,1,0.5];let res=[];
+  for(let p of ps){let cnt=Math.floor(rem/p);if(cnt>0){res.push(`${cnt}×${p}kg`);rem=+(rem-cnt*p).toFixed(2)}}
+  return res.length?`Na jedną stronę: ${res.join(', ')}`:'Brak dodatkowych talerzy';
+};
 // ---------- RENDER ----------
 function render(){
  const g=S.g,d=D(),t=tot(d),wt=lastW(),isToday=curDate===todayKey();
@@ -215,11 +231,11 @@ function render(){
  const pr=Object.entries(S.pr).sort((a,b)=>b[1]-a[1]).slice(0,6);
  $('#t-work').innerHTML=`<div class="pills">${plans().map(k=>`<button class="pill ${k===pl?'on':''}" data-wk="${esc(k)}">${esc(k)}</button>`).join('')}<button class="pill" data-addpl="1">+ Plan</button></div>
  <div class="card"><div class="ct"><span>${esc(title)}</span><span class="badge" id="wp"></span></div>
- <p class="sub" style="margin-bottom:10px">Każda seria ma własny ciężar i powtórzenia. ✓ zapisuje serię i włącza timer. Przy hantlach wpisz łączny ciężar obu.</p>
+ <p class="sub" style="margin-bottom:10px">Każda seria ma własny ciężar i powtórzenia. Kliknij w nazwę ćwiczenia, aby zobaczyć wykres progresji i kalkulator talerzy. ✓ zapisuje serię.</p>
  ${exs.map(([id,n,tg,h,du,dw,cu])=>{const N=nSets(id,tg),L=lastSess(id),rg=repTop(tg),cur=d.s[id]||[],hint=progHint(id,tg);let rows='',sampleW=dw;
  for(let i=0;i<N;i++){const x=cur[i]||{},p=L?(L.s[i]||L.s.at(-1)):{},valK=x.k??p.k??S.ew[id]??dw;if(i===0||x.k)sampleW=valK;rows+=`<div class="sr"><span>S${i+1}</span><input data-sk="${id}|${i}" data-du="${du?1:0}" value="${esc(valK)}" inputmode="decimal" aria-label="kg"><input data-sk="${id}|${i}" value="${esc(x.r??'')}" placeholder="${p.r||rg||'powt.'}" inputmode="numeric" aria-label="powt."><button class="sb ${x.x?'on':''}" data-s="${id}|${i}">✓</button></div>`;if(x.x)done++}
  all+=N;
- return `<div class="ex"><div class="row"><b>${esc(n)}</b><span class="t">${esc(tg)}</span></div><div class="h">${L?'Ostatnio: '+L.s.map(x=>x.k+'×'+x.r).join(', '):cu?'Własne ćwiczenie':'Ostatnio: '+h}${S.pr[id]?` · 🏆 e1RM ${S.pr[id].toFixed(1)}`:''}</div>${du?`<div class="du-note" id="du-${id}">${dual(sampleW)}</div>`:''}${hint?`<div class="d">${hint}</div>`:''}
+ return `<div class="ex"><div class="row"><b data-chart="${id}">${esc(n)}</b><span class="t">${esc(tg)}</span></div><div class="h">${L?'Ostatnio: '+L.s.map(x=>x.k+'×'+x.r).join(', '):cu?'Własne ćwiczenie':'Ostatnio: '+h}${S.pr[id]?` · 🏆 e1RM ${S.pr[id].toFixed(1)}`:''}</div>${du?`<div class="du-note" id="du-${id}">${dual(sampleW)}</div>`:''}${hint?`<div class="d">${hint}</div>`:''}
  <div class="sr hd"><span></span><em>kg</em><em>powt.</em><span></span></div>${rows}
  <div class="mod"><span>Serie</span><button data-ns="${id}|-1">−</button><b>${N}</b><button data-ns="${id}|1">+</button><button class="rm" data-hide="${id}">Usuń</button></div></div>`}).join('')}
  <button class="btn p" data-addex="1" style="width:100%;margin-top:4px">+ Dodaj ćwiczenie</button>${Object.keys(S.hid).length?`<button class="btn" data-unhide="1" style="width:100%;margin-top:8px">Przywróć usunięte (${Object.keys(S.hid).length})</button>`:''}${S.cpl[pl]?`<button class="btn" data-delpl="1" style="width:100%;margin-top:8px;color:var(--red)">Usuń ten plan</button>`:''}</div>
@@ -258,8 +274,9 @@ function renderFoods(){const q=($('#fs')?.value||'').toLowerCase().trim(),all=AL
  el.innerHTML=rec+`<div class="pills">${CATS.map(([k,l])=>`<button class="pill ${S.cat===k?'on':''}" data-cat="${k}">${l}</button>`).join('')}</div><div class="card">${body}</div>`}
 // ---------- ZDARZENIA ----------
 document.addEventListener('click',e=>{
- const c=e.target.closest('[data-dd],[data-c],[data-w],[data-wk],[data-s],[data-f],[data-r],[data-m],[data-cat],[data-undo],[data-del],[data-st],[data-rd],[data-ct],[data-t],[data-ns],[data-hide],[data-unhide],[data-addex],[data-addpl],[data-delpl],#mes,#cg,#ws,#ca,#ra,#sts,#setBtn');if(!c)return;
+ const c=e.target.closest('[data-chart],[data-dd],[data-c],[data-w],[data-wk],[data-s],[data-f],[data-r],[data-m],[data-cat],[data-undo],[data-del],[data-st],[data-rd],[data-ct],[data-t],[data-ns],[data-hide],[data-unhide],[data-addex],[data-addpl],[data-delpl],#mes,#cg,#ws,#ca,#ra,#sts,#setBtn');if(!c)return;
  const d=D(),ds=c.dataset;
+ if(ds.chart){openExerciseChart(ds.chart);return}
  if(ds.dd!==undefined){shiftDate(parseInt(ds.dd));render();return}
  if(ds.t){S.tab=ds.t;document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x.id==='t-'+ds.t));document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x===c));scrollTo(0,0);return}
  if(ds.c){ds.fn==='shake'?toggleShake(ds.c):(d.c[ds.c]=!d.c[ds.c],save());return}
@@ -294,10 +311,29 @@ document.addEventListener('input',e=>{const t=e.target;
  if(t.id==='fs')renderFoods();
  if(t.dataset.sk){const[id,i]=t.dataset.sk.split('|'),[k,r]=t.parentElement.querySelectorAll('input'),d=D();d.s[id]=d.s[id]||[];d.s[id][i]={...d.s[id][i],k:k.value,r:r.value};
   if(t.dataset.du==='1'){const duEl=$('#du-'+id);if(duEl)duEl.textContent=dual(k.value)}
-  try{localStorage.setItem(KEY,JSON.stringify(S))}catch(x){}}});
+  try{localStorage.setItem(KEY,JSON.stringify(S))}catch(x){}}
+ if(t.id==='calc-input'){const val=parseFloat(t.value)||0;const resEl=$('#calc-res');if(resEl)resEl.textContent=calcPlates(val)}});
+function openExerciseChart(id){const name=exName(id),h=S.hist[id]||[];const dl=$('#dlg');
+ let chartHtml='<div class="empty">Brak historii sesji dla tego ćwiczenia. Zapisuj serie z ciężarem!</div>';
+ if(h.length>=1){const vals=h.map(x=>Math.max(...x.s.map(s=>parseFloat(String(s.k).replace(',','.'))||0)));const mn=Math.min(...vals)-5,mx=Math.max(...vals)+5,w=280,h80=80;
+  const X=i=>10+i*(w-20)/(Math.max(1,vals.length-1)),Y=y=>h80-10-(y-mn)/(mx-mn||1)*(h80-20),pts=vals.map((y,i)=>X(i)+','+Y(y)).join(' ');
+  chartHtml=`<svg viewBox="0 0 ${w} ${h80+15}" width="100%"><polyline fill="none" stroke="var(--blue)" stroke-width="2.5" points="${pts}"/><circle cx="${X(vals.length-1)}" cy="${Y(vals.at(-1))}" r="3.5" fill="var(--acc)"/></svg><div class="sub">Ostatnie sesje: ${h.map(x=>x.d.slice(5)+': '+x.s.map(s=>s.k+'kg').join(', ')).join(' | ')}</div>`}
+ dl.innerHTML=`<div class="ct"><span>📈 ${esc(name)}</span><button class="x" style="position:static;font-size:1.1rem" id="dx">✕</button></div>
+ ${chartHtml}
+ <div class="sh" style="margin-top:14px">⚖️ Kalkulator sprzętu:</div>
+ <div class="pills" style="margin-bottom:6px">
+   <button class="pill ${calcMode==='bar'?'on':''}" id="mode-bar">Sztanga (20 kg)</button>
+   <button class="pill ${calcMode==='db'?'on':''}" id="mode-db">Hantla (2.5 kg)</button>
+ </div>
+ <input id="calc-input" type="number" placeholder="Wpisz ciężar całkowity (np. 70)" inputmode="decimal">
+ <div class="plate-calc" id="calc-res">Wpisz ciężar, aby zobaczyć rozkład talerzy.</div>`;
+ dl.showModal();$('#dx').onclick=()=>dl.close();
+ $('#mode-bar').onclick=()=>{calcMode='bar';$('#mode-bar').classList.add('on');$('#mode-db').classList.remove('on');const val=parseFloat($('#calc-input').value)||0;$('#calc-res').textContent=calcPlates(val)};
+ $('#mode-db').onclick=()=>{calcMode='db';$('#mode-db').classList.add('on');$('#mode-bar').classList.remove('on');const val=parseFloat($('#calc-input').value)||0;$('#calc-res').textContent=calcPlates(val)}}
 function openSettings(){const g=S.g,dl=$('#dlg');
  dl.innerHTML=`<div class="ct"><span>Cele i dane</span><button class="x" style="position:static;font-size:1.1rem" id="dx">✕</button></div>
  ${[['kcal','Kalorie (kcal)'],['p','Białko (g)'],['water','Woda (L)'],['steps','Kroki'],['start','Waga startowa (kg)'],['target','Waga docelowa (kg)']].map(([k,l])=>`<label>${l}</label><input data-g="${k}" type="number" step="any" value="${g[k]}">`).join('')}
+ <div class="chk ${g.oled?'done':''}" id="oled-toggle" style="margin-top:12px"><div class="cb">✓</div><div><b>Czysty czarny motyw OLED (#000)</b><small>Włącz głęboką czerń w tle</small></div></div>
  <label>Kopia zapasowa do pliku (.json)</label>
  <div class="ir" style="margin-top:4px"><button class="btn" id="gf_dl">📥 Pobierz .json</button><button class="btn" id="gf_ul">📤 Wczytaj .json</button><input type="file" id="gf_in" accept=".json,application/json" style="display:none"></div>
  <label>Lub skopiuj / wklej tekst JSON ręcznie</label><textarea id="bk">${esc(JSON.stringify(S))}</textarea>
@@ -305,6 +341,7 @@ function openSettings(){const g=S.g,dl=$('#dlg');
  <button class="btn" id="gr" style="width:100%;margin-top:8px;color:var(--red)">Usuń wszystkie dane</button>`;
  dl.showModal();
  $('#dx').onclick=()=>dl.close();
+ $('#oled-toggle').onclick=()=>{S.g.oled=!S.g.oled;document.body.classList.toggle('oled',S.g.oled);$('#oled-toggle').classList.toggle('done',S.g.oled);save()};
  $('#gs').onclick=()=>{dl.querySelectorAll('[data-g]').forEach(i=>{const v=parseFloat(i.value);if(v>0)S.g[i.dataset.g]=v});dl.close();save()};
  $('#gi').onclick=()=>{try{S={...def(),...JSON.parse($('#bk').value)};dl.close();save()}catch(x){alert('Niepoprawny JSON')}};
  $('#gf_dl').onclick=()=>{const b=new Blob([JSON.stringify(S,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`recomp-backup-${todayKey()}.json`;a.click();URL.revokeObjectURL(a.href)};

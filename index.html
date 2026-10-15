@@ -235,6 +235,7 @@ h1 small{
 }
 .bar.b i{background:linear-gradient(90deg,#0288d1,var(--blue));box-shadow:0 0 12px rgba(41,182,246,0.45)}
 .bar.o i{background:linear-gradient(90deg,#f57c00,var(--org));box-shadow:0 0 12px rgba(255,167,38,0.45)}
+.bar.p i{background:linear-gradient(90deg,#7c4dff,var(--pur));box-shadow:0 0 12px rgba(179,136,255,0.45)}
 .bar.over i{background:linear-gradient(90deg,var(--red),#ff8a80);box-shadow:0 0 12px rgba(255,82,82,0.5)}
 
 .row{display:flex;justify-content:space-between;align-items:center;font-size:.81rem}
@@ -501,12 +502,74 @@ input:focus{
 .ring circle{transition:stroke-dashoffset .75s var(--spring),stroke .3s}
 .hs{flex:1;min-width:0}
 
+/* Calendar Grid Styles */
+.cal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.cal-head b{font-size:1rem;font-weight:800;text-transform:capitalize}
+.cal-head button{
+  background:var(--card2);border:1px solid var(--line);border-radius:10px;
+  width:36px;height:34px;font-weight:800;transition:transform .18s var(--spring);
+}
+.cal-head button:active{transform:scale(.88)}
+.cal-wk{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;text-align:center;font-size:.68rem;color:var(--muted);font-weight:800;margin-bottom:6px;text-transform:uppercase}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.cal-day{
+  aspect-ratio:1;
+  border-radius:13px;
+  background:transparent;
+  border:1.5px solid var(--line);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  font-size:.82rem;
+  font-weight:700;
+  color:var(--muted);
+  position:relative;
+  transition:all .22s var(--spring);
+  padding:2px;
+}
+.cal-day:active{transform:scale(.88)}
+.cal-day.empty-slot{border:0;pointer-events:none}
+.cal-day.future{opacity:.3;pointer-events:none}
+/* Tracked day has glowing colored border */
+.cal-day.tracked{
+  color:var(--text);
+  background:color-mix(in srgb,var(--acc) 10%,var(--card2));
+  border:2px solid var(--acc);
+  box-shadow:0 0 12px color-mix(in srgb,var(--acc) 28%,transparent),inset 0 0 6px color-mix(in srgb,var(--acc) 14%,transparent);
+}
+.cal-day.tracked.partial{
+  border-color:var(--blue);
+  background:color-mix(in srgb,var(--blue) 10%,var(--card2));
+  box-shadow:0 0 10px rgba(41,182,246,0.25);
+}
+.cal-day.sel{
+  transform:scale(1.06);
+  outline:2px solid var(--acc2);
+  outline-offset:1px;
+  color:var(--text);
+  font-weight:900;
+}
+.cal-day.is-today span::after{
+  content:'';
+  display:block;
+  width:4px;height:4px;
+  border-radius:50%;
+  background:var(--org);
+  margin:1px auto 0;
+}
+.cal-dots{display:flex;gap:2px;margin-top:2px;height:4px}
+.cal-dots i{width:4px;height:4px;border-radius:50%;display:block}
+.cal-legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;font-size:.7rem;color:var(--muted);justify-content:center}
+.cal-legend span{display:inline-flex;align-items:center;gap:5px}
+.cal-legend b{width:10px;height:10px;border-radius:4px;display:inline-block}
+
 /* Floating Island Bottom Nav */
 nav{
   position:fixed;
   bottom:calc(10px + env(safe-area-inset-bottom,0px));
-  left:12px;right:12px;
-  max-width:596px;
+  left:10px;right:10px;
+  max-width:600px;
   margin:0 auto;
   background:color-mix(in srgb,var(--card-solid) 82%,transparent);
   backdrop-filter:blur(22px) saturate(180%);
@@ -514,7 +577,7 @@ nav{
   border:1px solid var(--line-hi);
   border-radius:24px;
   display:flex;
-  padding:6px;
+  padding:5px;
   z-index:30;
   box-shadow:0 12px 34px rgba(0,0,0,0.55);
 }
@@ -524,21 +587,21 @@ nav button{
   border:0;
   padding:6px 0;
   color:var(--muted);
-  font-size:.65rem;
+  font-size:.62rem;
   font-weight:700;
   display:flex;
   flex-direction:column;
   align-items:center;
-  gap:3px;
+  gap:2px;
   border-radius:18px;
   transition:all .25s var(--spring);
 }
 nav button:active{transform:scale(.9)}
 nav button i{
   font-style:normal;
-  font-size:1.22rem;
-  width:48px;height:28px;
-  border-radius:14px;
+  font-size:1.18rem;
+  width:42px;height:26px;
+  border-radius:13px;
   display:grid;place-items:center;
   transition:all .28s var(--spring);
 }
@@ -626,13 +689,15 @@ svg text{fill:var(--muted);font-size:9px;font-weight:600}
  <section class="tab" id="t-work"></section>
  <section class="tab" id="t-diet"></section>
  <section class="tab" id="t-act"></section>
+ <section class="tab" id="t-cal"></section>
 </div>
 <div id="rest"><span id="rt">⏱️ Przerwa 2:30</span><span><button id="r30">+30s</button> <button id="rx">✕</button></span></div>
 <nav>
  <button class="on" data-t="home"><i>⚡</i>Pulpit</button>
  <button data-t="work"><i>🏋️</i>Trening</button>
  <button data-t="diet"><i>🍽️</i>Dieta</button>
- <button data-t="act"><i>🏃</i>Ruch</button>
+ <button data-t="act"><i>🏃</i>Ruch & Sen</button>
+ <button data-t="cal"><i>📅</i>Kalendarz</button>
 </nav>
 <dialog id="dlg"></dialog>
 <script>
@@ -682,15 +747,37 @@ if(S.g.oled)document.body.classList.add('oled');
 const $=s=>document.querySelector(s),esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const todayKey=()=>new Date().toLocaleDateString('sv');
 let curDate=todayKey();
+let calMonth=curDate.slice(0,7); // YYYY-MM
 const dk=d=>d?d.toLocaleDateString('sv'):curDate;
-const shiftDate=dl=>{if(dl===0){curDate=todayKey();return}const dt=new Date(curDate+'T12:00:00');dt.setDate(dt.getDate()+dl);const nk=dt.toLocaleDateString('sv');if(nk<=todayKey())curDate=nk};
-const D=(k=dk())=>S.days[k]||(S.days[k]={f:[],w:0,c:{},s:{},st:0});
+const shiftDate=dl=>{if(dl===0){curDate=todayKey();calMonth=curDate.slice(0,7);return}const dt=new Date(curDate+'T12:00:00');dt.setDate(dt.getDate()+dl);const nk=dt.toLocaleDateString('sv');if(nk<=todayKey()){curDate=nk;calMonth=curDate.slice(0,7)}};
+const shiftCalMonth=dl=>{const[y,m]=calMonth.split('-').map(Number);const dt=new Date(y,m-1+dl,1);calMonth=`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`};
+const D=(k=dk())=>S.days[k]||(S.days[k]={f:[],w:0,c:{},s:{},st:0,sl:0,nap:0,napM:0});
 const tot=d=>({k:d.f.reduce((a,x)=>a+x.k,0),p:d.f.reduce((a,x)=>a+x.p,0),c:d.f.reduce((a,x)=>a+(x.c||0),0),f:d.f.reduce((a,x)=>a+(x.f||0),0)});
 const lastW=()=>{const k=Object.keys(S.wh).sort();return k.length?S.wh[k.pop()]:S.g.start};
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}render()}
 const pct=(a,b)=>Math.min(100,Math.round(a/b*100));
 const bar=(v,m,c='')=>`<div class="bar ${c}"><i style="width:${pct(v,m)}%"></i></div>`;
 const ALL=()=>[...F.map(f=>({n:f[2],e:f[1],k:f[3],p:f[4],g:f[0]})),...S.tiles.map((t,i)=>({...t,e:'⭐',g:'cu',ci:i}))];
+
+// Sprawdza czy dany dzień YYYY-MM-DD ma jakiekolwiek zapisane pomiary
+function dayStatus(k){
+  const d=S.days[k];
+  const hasW=S.wh[k]!==undefined;
+  const hasMe=S.me[k]!==undefined;
+  const hasHist=Object.values(S.hist||{}).some(arr=>arr.some(x=>x.d===k));
+  if(!d && !hasW && !hasMe && !hasHist) return {tracked:false};
+  const hasFood=d&&d.f&&d.f.length>0;
+  const hasWater=d&&d.w>0;
+  const hasSteps=d&&d.st>0;
+  const hasSleep=d&&(d.sl>0||d.nap);
+  const hasChecks=d&&d.c&&Object.values(d.c).some(Boolean);
+  const hasSets=d&&d.s&&Object.values(d.s).some(arr=>arr&&arr.some(x=>x&&x.x));
+  const hasWork=hasSets||hasHist;
+  const tracked=Boolean(hasFood||hasWater||hasSteps||hasSleep||hasChecks||hasWork||hasW||hasMe);
+  const full=Boolean((hasFood&&tot(d).k>=800)||hasWork||hasSleep||hasSteps);
+  return {tracked,full,hasFood,hasWork,hasSleep,hasAct:Boolean(hasSteps||(d&&d.c&&(d.c.wf||d.c.run||d.c.foot||d.c.pool)))};
+}
+
 // ---------- AKCJE ----------
 function addFood(n,k,p,tag,c,f){const m=tag?1:S.m,d=D();
  d.f.unshift({n:m!==1?`${n} ×${m}`:n,k:Math.round(k*m),p:Math.round(p*m),t:new Date().toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'}),tag,c:Math.round(c||0),f:Math.round(f||0)});
@@ -811,6 +898,94 @@ function plateSvg(kg,mode=calcMode){
   }
   return `<div class="plate-vis"><svg viewBox="0 0 260 60" width="100%" style="max-width:280px"><rect x="10" y="27" width="240" height="6" rx="3" fill="#6e7180"/><rect x="44" y="21" width="6" height="18" rx="2" fill="#9ea2b4"/>${rects}</svg></div>`;
 }
+
+// ---------- KALENDARZ RENDER ----------
+function renderCalendar(){
+  const [y,m]=calMonth.split('-').map(Number);
+  const mName=new Date(y,m-1,1).toLocaleDateString('pl-PL',{month:'long',year:'numeric'});
+  const firstDay=(new Date(y,m-1,1).getDay()+6)%7; // Poniedziałek = 0
+  const daysInMonth=new Date(y,m,0).getDate();
+  const tk=todayKey();
+  let cells='',trackedCount=0;
+  for(let i=0;i<firstDay;i++)cells+=`<div class="cal-day empty-slot"></div>`;
+  for(let day=1;day<=daysInMonth;day++){
+    const k=`${calMonth}-${String(day).padStart(2,'0')}`;
+    const st=dayStatus(k);
+    if(st.tracked)trackedCount++;
+    const isFut=k>tk;
+    const cls=[
+      'cal-day',
+      st.tracked?(st.full?'tracked':'tracked partial'):'',
+      k===curDate?'sel':'',
+      k===tk?'is-today':'',
+      isFut?'future':''
+    ].filter(Boolean).join(' ');
+    const dots=st.tracked?`<div class="cal-dots">${st.hasFood?'<i style="background:var(--acc)"></i>':''}${st.hasWork?'<i style="background:var(--blue)"></i>':''}${st.hasSleep?'<i style="background:var(--pur)"></i>':''}${st.hasAct?'<i style="background:var(--org)"></i>':''}</div>`:'';
+    cells+=`<button class="${cls}" data-cday="${k}"><span>${day}</span>${dots}</button>`;
+  }
+
+  // Podgląd wybranego dnia (curDate)
+  const sd=D(curDate),st=tot(sd),sw=S.wh[curDate];
+  const histEx=[];
+  for(const [id,arr] of Object.entries(S.hist||{})){
+    const found=arr.find(x=>x.d===curDate);
+    if(found)histEx.push([exName(id),found.s.map(s=>`${s.k}×${s.r}`).join(', ')]);
+  }
+  // Również serie wpisane bezpośrednio w sd.s (jeśli jeszcze nie w hist lub bez x)
+  if(!histEx.length && sd.s){
+    for(const [id,arr] of Object.entries(sd.s)){
+      const valid=(arr||[]).filter(x=>x&&(x.x||x.r));
+      if(valid.length)histEx.push([exName(id),valid.map(s=>`${s.k}×${s.r}`).join(', ')]);
+    }
+  }
+  const acts=[];
+  if(sd.c?.wf)acts.push('🏀 Zajęcia WF');
+  if(sd.c?.foot)acts.push('⚽ Piłka nożna');
+  if(sd.c?.pool)acts.push('🏊‍♂️ Basen');
+  if(sd.c?.run)acts.push('🏃 Bieganie');
+  if(sd.c?.cre)acts.push('⚡ Kreatyna');
+  if(sd.c?.cit)acts.push('🔥 Cytrulina');
+
+  const selTitle=new Date(curDate+'T12:00:00').toLocaleDateString('pl-PL',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  const dst=dayStatus(curDate);
+
+  return `
+  <div class="card">
+    <div class="ct"><span>📅 Kalendarz pomiarów</span><span class="badge">${trackedCount} dni w mies.</span></div>
+    <div class="cal-head">
+      <button data-cm="-1" title="Poprzedni miesiąc">◀</button>
+      <b>${mName}</b>
+      <button data-cm="1" title="Następny miesiąc">▶</button>
+    </div>
+    <div class="cal-wk"><span>Pn</span><span>Wt</span><span>Śr</span><span>Cz</span><span>Pt</span><span>So</span><span>Nd</span></div>
+    <div class="cal-grid">${cells}</div>
+    <div class="cal-legend">
+      <span><b style="border:2px solid var(--acc);background:color-mix(in srgb,var(--acc) 20%,transparent)"></b>Pełny pomiar</span>
+      <span><b style="border:2px solid var(--blue);background:color-mix(in srgb,var(--blue) 20%,transparent)"></b>Częściowy</span>
+      <span><b style="border:1.5px solid var(--line)"></b>Pusty</span>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ct"><span>📋 Podgląd: ${selTitle}</span><span class="badge">${dst.tracked?'Zapisany':'Brak danych'}</span></div>
+    <div class="grid2" style="margin-bottom:10px">
+      <div class="box"><div class="row"><span>Kalorie</span><b>${st.k} / ${S.g.kcal}</b></div>${bar(st.k,S.g.kcal)}</div>
+      <div class="box"><div class="row"><span>Białko</span><b>${st.p} / ${S.g.p} g</b></div>${bar(st.p,S.g.p,'b')}</div>
+      <div class="box"><div class="row"><span>Woda & Kroki</span><b>${sd.w.toFixed(2)}L · ${sd.st}</b></div>${bar(sd.st,S.g.steps,'o')}</div>
+      <div class="box"><div class="row"><span>Sen ${sd.nap?`(+${sd.napM||0}m)`:''}</span><b>${sd.sl||0} h</b></div>${bar(sd.sl||0,8,'p')}</div>
+    </div>
+    ${sw?`<div class="log"><span>⚖️ Zapisana waga ciała</span><em>${sw.toFixed(1)} kg</em></div>`:''}
+    ${acts.length?`<div class="log"><span>🏅 Aktywności i stack</span><em>${acts.join(' · ')}</em></div>`:''}
+    ${histEx.length?`<div class="sh">🏋️ Trening tego dnia:</div>${histEx.map(([n,s])=>`<div class="log"><span>${esc(n)}</span><em>${esc(s)}</em></div>`).join('')}`:''}
+    ${sd.f.length?`<div class="sh">🍽️ Spożyte posiłki (${sd.f.length}):</div>${sd.f.map(x=>`<div class="log"><span><b style="color:var(--muted)">${x.t}</b> ${esc(x.n)}</span><em>${x.k} kcal · ${x.p}g B</em></div>`).join('')}`:''}
+    ${!dst.tracked?`<div class="empty">Ten dzień nie ma jeszcze żadnych zapisanych pomiarów. Kliknij poniżej, aby uzupełnić dane dla tej daty.</div>`:''}
+    <div class="ir" style="margin-top:12px">
+      <button class="btn p" data-goto="home">⚡ Edytuj w Pulpicie</button>
+      <button class="btn" data-goto="diet">🍽️ Dodaj posiłek</button>
+      <button class="btn" data-goto="act">😴 Sen / Ruch</button>
+    </div>
+  </div>`;
+}
+
 // ---------- RENDER ----------
 function render(){
  const g=S.g,d=D(),t=tot(d),wt=lastW(),isToday=curDate===todayKey();
@@ -862,15 +1037,57 @@ function render(){
  <div class="card"><div class="ct"><span>Dziennik ${isToday?'dziś':curDate} (${d.f.length})</span><span style="color:var(--red);font-size:.75rem;font-weight:700;cursor:pointer" data-undo="1">↩ Cofnij</span></div>
  ${d.f.length?d.f.map((x,i)=>`<div class="log"><span><b style="color:var(--muted)">${x.t}</b> ${esc(x.n)}</span><span style="display:flex;gap:6px;align-items:center"><em>${x.k} kcal · ${x.p} g</em><button class="x" data-del="${i}">✕</button></span></div>`).join(''):'<div class="empty">Brak wpisów — wybierz posiłek powyżej.</div>'}</div>`;
  renderFoods();
- // RUCH
+ // RUCH & SEN
  const wk=S.runs.filter(r=>(Date.now()-r.ts)<7*864e5).reduce((a,r)=>a+r.km,0);
- $('#t-act').innerHTML=`<div class="card"><div class="ct"><span>Kroki ${isToday?'':`(${curDate})`}</span><span class="badge">${d.st}/${g.steps}</span></div>${bar(d.st,g.steps)}
+ const slHours=d.sl||0,napOn=!!d.nap,napMins=d.napM||0;
+ $('#t-act').innerHTML=`
+ <div class="card">
+  <div class="ct"><span>😴 Sen i Regeneracja ${isToday?'':`(${curDate})`}</span><span class="badge">${slHours?slHours+' h':'Brak wpisu'}${napOn&&napMins?` + ${napMins} min drzemki`:''}</span></div>
+  <div class="row"><span>Sen nocny (cel: 8 h)</span><b>${slHours} / 8 h</b></div>
+  ${bar(slHours,8,'p')}
+  <div class="ir" style="margin-top:10px">
+    <input id="sli" type="number" step="0.5" placeholder="Ile godzin spałeś? (np. 7.5)" value="${slHours||''}" inputmode="decimal">
+    <button class="btn p" id="sls" style="flex:0 0 95px">Zapisz sen</button>
+  </div>
+  <div class="ir" style="margin-top:6px">
+    <button class="btn" data-slq="6">6 h</button>
+    <button class="btn" data-slq="7">7 h</button>
+    <button class="btn" data-slq="7.5">7.5 h</button>
+    <button class="btn" data-slq="8">8 h</button>
+  </div>
+  <div class="chk ${napOn?'done':''}" id="nap-toggle" style="margin-top:12px;margin-bottom:0">
+    <div class="cb">✓</div>
+    <div><b>Drzemka w ciągu dnia (Power Nap)</b><small>${napOn?(napMins?`Zapisano: ${napMins} min drzemki`:'Zaznaczono — wpisz lub wybierz czas poniżej'):'Kliknij, jeśli miałeś drzemkę w ciągu dnia'}</small></div>
+  </div>
+  ${napOn?`
+  <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--line)">
+    <div class="ir" style="margin-top:0">
+      <input id="napi" type="number" placeholder="Czas drzemki w minutach (np. 30)" value="${napMins||''}" inputmode="numeric">
+      <button class="btn pu" id="naps" style="flex:0 0 95px">Ustaw min</button>
+    </div>
+    <div class="ir" style="margin-top:6px">
+      <button class="btn" data-napq="20">20 min</button>
+      <button class="btn" data-napq="30">30 min</button>
+      <button class="btn" data-napq="45">45 min</button>
+      <button class="btn" data-napq="60">60 min</button>
+      <button class="btn" data-napq="90">90 min</button>
+    </div>
+  </div>`:''}
+ </div>
+ <div class="card"><div class="ct"><span>👣 Kroki ${isToday?'':`(${curDate})`}</span><span class="badge">${d.st}/${g.steps}</span></div>${bar(d.st,g.steps)}
   <div class="ir"><button class="btn" data-st="1000">+1000</button><button class="btn" data-st="2000">+2000</button><button class="btn" data-st="-1000">−1000</button></div>
   <div class="ir"><input id="sti" type="number" placeholder="Ustaw dokładnie" inputmode="numeric"><button class="btn p" id="sts" style="flex:0 0 90px">Ustaw</button></div></div>
- <div class="card"><div class="ct"><span>Aktywność</span><span class="badge">NEAT & cardio</span></div>${chk('wf','Zajęcia WF','Odhacz w dzień zajęć (3-4× w tygodniu)')}${chk('run','Bieganie na zewnątrz','Zaznacza się samo po dodaniu biegu')}</div>
+ <div class="card"><div class="ct"><span>🏅 Aktywność sportowa</span><span class="badge">NEAT & Sport</span></div>
+  ${chk('wf','🏀 Zajęcia WF','Odhacz w dzień zajęć (3-4× w tygodniu)')}
+  ${chk('foot','⚽ Piłka nożna','Mecz lub trening piłkarski')}
+  ${chk('pool','🏊‍♂️ Basen / Pływanie','Sesja pływacka i regeneracja')}
+  ${chk('run','🏃 Bieganie na zewnątrz','Zaznacza się samo po dodaniu biegu')}
+ </div>
  <div class="card"><div class="ct"><span>Dziennik biegania</span><span class="badge">7 dni: ${wk.toFixed(1)} km</span></div>
   <div class="ir" style="margin-top:0"><input id="rk" type="number" step="0.1" placeholder="km" inputmode="decimal"><input id="rm" type="number" placeholder="min" inputmode="numeric"><button class="btn p" id="ra">Dodaj</button></div>
   <div style="margin-top:8px">${S.runs.length?S.runs.map((r,i)=>`<div class="log"><span>📅 ${r.date} · <b>${r.km} km</b>${r.min?` · ${r.min} min · ${(r.min/r.km).toFixed(1)} min/km`:''}</span><button class="x" data-rd="${i}">✕</button></div>`).join(''):'<div class="empty">Brak zapisanych biegów.</div>'}</div></div>`;
+ // KALENDARZ
+ $('#t-cal').innerHTML=renderCalendar();
 }
 function renderFoods(){const q=($('#fs')?.value||'').toLowerCase().trim(),all=ALL(),el=$('#fr');
  const tile=(f,i)=>`<button class="tile ${f.g==='cu'?'cu':''}" data-f="${i}"><b>${f.e} ${esc(f.n)}</b><span>${f.k} kcal · ${f.p} g B${f.u?' /100 g':''}</span></button>`;
@@ -884,11 +1101,19 @@ function renderFoods(){const q=($('#fs')?.value||'').toLowerCase().trim(),all=AL
  el.innerHTML=rec+`<div class="pills">${CATS.map(([k,l])=>`<button class="pill ${S.cat===k?'on':''}" data-cat="${k}">${l}</button>`).join('')}</div><div class="card">${body}</div>`}
 // ---------- ZDARZENIA ----------
 document.addEventListener('click',e=>{
- const c=e.target.closest('[data-chart],[data-dd],[data-c],[data-w],[data-wk],[data-s],[data-f],[data-r],[data-m],[data-cat],[data-undo],[data-del],[data-st],[data-rd],[data-ct],[data-t],[data-ns],[data-hide],[data-unhide],[data-addex],[data-addpl],[data-delpl],#mes,#cg,#ws,#ca,#ra,#sts,#setBtn');if(!c)return;
+ const c=e.target.closest('[data-chart],[data-dd],[data-cm],[data-cday],[data-goto],[data-slq],[data-napq],[data-c],[data-w],[data-wk],[data-s],[data-f],[data-r],[data-m],[data-cat],[data-undo],[data-del],[data-st],[data-rd],[data-ct],[data-t],[data-ns],[data-hide],[data-unhide],[data-addex],[data-addpl],[data-delpl],#nap-toggle,#sls,#naps,#mes,#cg,#ws,#ca,#ra,#sts,#setBtn');if(!c)return;
  const d=D(),ds=c.dataset;
  if(ds.chart){openExerciseChart(ds.chart);return}
  if(ds.dd!==undefined){shiftDate(parseInt(ds.dd));render();return}
+ if(ds.cm!==undefined){shiftCalMonth(parseInt(ds.cm));render();return}
+ if(ds.cday){curDate=ds.cday;burst(c,'var(--acc2)');render();return}
+ if(ds.goto){S.tab=ds.goto;document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x.id==='t-'+ds.goto));document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x.dataset.t===ds.goto));scrollTo(0,0);return}
  if(ds.t){S.tab=ds.t;document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x.id==='t-'+ds.t));document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x===c));scrollTo(0,0);return}
+ if(c.id==='sls'){const v=parseFloat(($('#sli').value||'').replace(',','.'));if(v>=0&&v<=24){burst(c,'var(--pur)');d.sl=v;save()}return}
+ if(ds.slq){burst(c,'var(--pur)');d.sl=parseFloat(ds.slq);save();return}
+ if(c.id==='nap-toggle'){burst(c,'var(--pur)');d.nap=!d.nap;if(!d.nap)d.napM=0;save();return}
+ if(c.id==='naps'){const v=parseInt($('#napi').value)||0;if(v>=0){burst(c,'var(--pur)');d.nap=1;d.napM=v;save()}return}
+ if(ds.napq){burst(c,'var(--pur)');d.nap=1;d.napM=parseInt(ds.napq);save();return}
  if(ds.c){burst(c);ds.fn==='shake'?toggleShake(ds.c):(d.c[ds.c]=!d.c[ds.c],save());return}
  if(ds.w){burst(c,'var(--org)');d.w=Math.max(0,+(d.w+parseFloat(ds.w)).toFixed(2));save()}
  else if(ds.wk){S.wk=ds.wk;save()}

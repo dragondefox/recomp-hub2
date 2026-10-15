@@ -14,9 +14,13 @@ box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:en
 @media (prefers-color-scheme:light){:root{color-scheme:light;--bg:#f3f3f7;--card:#fff;--card2:#eeeef3;--line:#dcdce4;--text:#14141a;--muted:#6b6b7a;--acc:#00a152;--blue:#0277bd;--org:#e65100;--pur:#6a3fd0;--red:#d32f2f;--onacc:#fff}}
 html{height:100%}*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;padding-bottom:96px;font-size:15px}
-header{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--card);border-bottom:1px solid var(--line);padding:12px 16px;display:flex;justify-content:space-between;align-items:center}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--card);border-bottom:1px solid var(--line);padding:12px 16px;display:flex;justify-content:space-between;align-items:center;gap:8px}
 h1{font-size:1.05rem;font-weight:800}h1 small{color:var(--blue);font-size:.7rem;margin-left:4px}
 .sub{font-size:.72rem;color:var(--muted);margin-top:2px}
+.dnav{display:flex;align-items:center;gap:5px;margin-top:5px}
+.dnav button{background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:3px 9px;font-size:.72rem;font-weight:700;color:var(--text)}
+.dnav button:disabled{opacity:.35;pointer-events:none}
+.dnav .today-pill{background:color-mix(in srgb,var(--blue) 18%,transparent);color:var(--blue);border-color:color-mix(in srgb,var(--blue) 40%,transparent)}
 .main{max-width:620px;margin:0 auto;padding:12px}
 .tab{display:none}.tab.on{display:block}
 .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}
@@ -50,7 +54,8 @@ input:focus{border-color:var(--acc)}
 .log:last-child{border:0}.log em{font-style:normal;color:var(--acc);font-weight:700;white-space:nowrap}.log .x{position:static}
 .ex{background:var(--card2);border-radius:12px;padding:12px;margin-bottom:10px}
 .ex b{font-size:.86rem}.ex .t{font-size:.7rem;color:var(--blue);font-weight:700;white-space:nowrap}
-.ex .h{font-size:.7rem;color:var(--muted);margin:4px 0 8px}.ex .d{font-size:.7rem;color:var(--org);margin-bottom:6px}
+.ex .h{font-size:.7rem;color:var(--muted);margin:4px 0 6px}.ex .d{font-size:.7rem;color:var(--org);margin-bottom:6px}
+.ex .du-note{font-size:.7rem;color:var(--blue);font-weight:600;margin-bottom:6px}
 .sets{display:flex;gap:6px}.sets input{flex:1.3}
 .sb{flex:1;border-radius:9px;border:1px solid var(--line);background:var(--card);font-weight:700;font-size:.75rem}
 .sb.on{background:var(--acc);color:var(--onacc);border-color:var(--acc)}
@@ -87,7 +92,15 @@ svg text{fill:var(--muted);font-size:9px}
 </head>
 <body>
 <header>
-  <div><h1>RECOMP HUB<small>HEVY EDITION</small></h1><div class="sub" id="hsub"></div></div>
+  <div>
+    <h1>RECOMP HUB<small>HEVY EDITION</small></h1>
+    <div class="sub" id="hsub"></div>
+    <div class="dnav">
+      <button data-dd="-1" title="Poprzedni dzień">◀</button>
+      <button id="dtoday" data-dd="0">Dzisiaj</button>
+      <button id="dnext" data-dd="1" title="Następny dzień">▶</button>
+    </div>
+  </div>
   <button class="btn" id="setBtn">⚙︎ Cele</button>
 </header>
 <div class="main">
@@ -129,7 +142,10 @@ const KEY='recomp2';
 const def=()=>({g:{kcal:2350,p:180,water:3,steps:8000,start:88,target:79},days:{},wh:{},ew:{},tiles:[],rec:[],cx:{},hid:{},nc:{},hist:{},pr:{},cpl:{},me:{},runs:[],tab:'home',wk:'PULL',cat:'st',m:1});
 let S;try{S={...def(),...JSON.parse(localStorage.getItem(KEY)||'{}')}}catch(e){S=def()}
 const $=s=>document.querySelector(s),esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const dk=(d=new Date())=>d.toLocaleDateString('sv');
+const todayKey=()=>new Date().toLocaleDateString('sv');
+let curDate=todayKey();
+const dk=d=>d?d.toLocaleDateString('sv'):curDate;
+const shiftDate=dl=>{if(dl===0){curDate=todayKey();return}const dt=new Date(curDate+'T12:00:00');dt.setDate(dt.getDate()+dl);const nk=dt.toLocaleDateString('sv');if(nk<=todayKey())curDate=nk};
 const D=(k=dk())=>S.days[k]||(S.days[k]={f:[],w:0,c:{},s:{},st:0});
 const tot=d=>({k:d.f.reduce((a,x)=>a+x.k,0),p:d.f.reduce((a,x)=>a+x.p,0),c:d.f.reduce((a,x)=>a+(x.c||0),0),f:d.f.reduce((a,x)=>a+(x.f||0),0)});
 const lastW=()=>{const k=Object.keys(S.wh).sort();return k.length?S.wh[k.pop()]:S.g.start};
@@ -147,36 +163,41 @@ let rI,rLeft=0;const tickR=()=>$('#rt').textContent=`Przerwa ${Math.floor(rLeft/
 function stopRest(){clearInterval(rI);$('#rest').style.display='none'}
 $('#r30').onclick=()=>{rLeft+=30;tickR()};$('#rx').onclick=stopRest;
 // ---------- WYKRESY ----------
-function weightChart(){const ks=Object.keys(S.wh).sort().slice(-30);if(ks.length<2)return '<div class="empty">Dodaj co najmniej 2 pomiary wagi, aby zobaczy\u0107 wykres i trend.</div>';
+function weightChart(){const ks=Object.keys(S.wh).sort().slice(-30);if(ks.length<2)return '<div class="empty">Dodaj co najmniej 2 pomiary wagi, aby zobaczyć wykres i trend.</div>';
  const v=ks.map(k=>S.wh[k]),av=v.map((_,i)=>{const q=v.slice(Math.max(0,i-6),i+1);return q.reduce((a,b)=>a+b)/q.length}),mn=Math.min(...v,S.g.target)-1,mx=Math.max(...v)+1,w=300,h=90;
  const X=i=>8+i*(w-16)/(ks.length-1),Y=x=>h-8-(x-mn)/(mx-mn)*(h-16),pts=a=>a.map((x,i)=>X(i)+','+Y(x)).join(' ');
  const rk=ks.slice(-14),tx=rk.map(k=>new Date(k)/864e5),ty=rk.map(k=>S.wh[k]),n=rk.length,mt=tx.reduce((a,b)=>a+b)/n,my=ty.reduce((a,b)=>a+b)/n;let nu=0,de=0;tx.forEach((x,i)=>{nu+=(x-mt)*(ty[i]-my);de+=(x-mt)**2});const sl=de?nu/de:0,cur=av.at(-1);
- const fc=`Trend: ${(sl*7).toFixed(2)} kg/tydz`+(sl<0&&cur>S.g.target?` \u00b7 cel ok. ${new Date(Date.now()+Math.ceil((cur-S.g.target)/-sl)*864e5).toLocaleDateString('pl-PL')}`:'');
- return `<svg viewBox="0 0 ${w} ${h+10}" width="100%"><line x1="8" x2="${w-8}" y1="${Y(S.g.target)}" y2="${Y(S.g.target)}" stroke="var(--acc)" stroke-dasharray="3 3"/><polyline fill="none" stroke="var(--blue)" stroke-width="1.5" opacity=".5" points="${pts(v)}"/><polyline fill="none" stroke="var(--org)" stroke-width="2.5" points="${pts(av)}"/>${v.map((x,i)=>`<circle cx="${X(i)}" cy="${Y(x)}" r="2" fill="var(--blue)"/>`).join('')}<text x="8" y="${h+8}">${ks[0].slice(5)}</text><text x="${w-8}" y="${h+8}" text-anchor="end">${ks.at(-1).slice(5)}</text></svg><div class="sub">Niebieska: pomiary \u00b7 pomara\u0144czowa: \u015brednia 7 dni \u00b7 ${fc}</div>`}
+ const fc=`Trend: ${(sl*7).toFixed(2)} kg/tydz`+(sl<0&&cur>S.g.target?` · cel ok. ${new Date(Date.now()+Math.ceil((cur-S.g.target)/-sl)*864e5).toLocaleDateString('pl-PL')}`:'');
+ return `<svg viewBox="0 0 ${w} ${h+10}" width="100%"><line x1="8" x2="${w-8}" y1="${Y(S.g.target)}" y2="${Y(S.g.target)}" stroke="var(--acc)" stroke-dasharray="3 3"/><polyline fill="none" stroke="var(--blue)" stroke-width="1.5" opacity=".5" points="${pts(v)}"/><polyline fill="none" stroke="var(--org)" stroke-width="2.5" points="${pts(av)}"/>${v.map((x,i)=>`<circle cx="${X(i)}" cy="${Y(x)}" r="2" fill="var(--blue)"/>`).join('')}<text x="8" y="${h+8}">${ks[0].slice(5)}</text><text x="${w-8}" y="${h+8}" text-anchor="end">${ks.at(-1).slice(5)}</text></svg><div class="sub">Niebieska: pomiary · pomarańczowa: średnia 7 dni · ${fc}</div>`}
 function weekChart(){const days=[...Array(7)].map((_,i)=>{const d=new Date();d.setDate(d.getDate()-6+i);return d}),w=300,h=80;
  const vals=days.map(d=>tot(D(dk(d))).k),mx=Math.max(S.g.kcal,...vals);
  return `<svg viewBox="0 0 ${w} ${h+14}" width="100%"><line x1="0" x2="${w}" y1="${h-S.g.kcal/mx*h}" y2="${h-S.g.kcal/mx*h}" stroke="var(--acc)" stroke-dasharray="3 3"/>${vals.map((v,i)=>`<rect x="${i*43+6}" y="${h-v/mx*h}" width="30" height="${v/mx*h}" rx="4" fill="${v>S.g.kcal?'var(--red)':'var(--blue)'}"/><text x="${i*43+21}" y="${h+11}" text-anchor="middle">${days[i].toLocaleDateString('pl-PL',{weekday:'short'})}</text>`).join('')}</svg>`}
 const planEx=k=>[...(W[k]?W[k][1]:[]),...(S.cx[k]||[])].filter(e=>!S.hid[e[0]]);
 const plans=()=>[...Object.keys(W),...Object.keys(S.cpl)];
 const MK=['talia','klatka','ramie','udo'];
-const repTop=tg=>{const m=String(tg).match(/\u00d7\s*(\d+)(?:-(\d+))?/);return m?+(m[2]||m[1]):0};
+const repTop=tg=>{const m=String(tg).match(/×\s*(\d+)(?:-(\d+))?/);return m?+(m[2]||m[1]):0};
 const lastSess=id=>(S.hist[id]||[]).filter(x=>x.d!==dk()).at(-1);
-function histSave(id){const ss=(D().s[id]||[]).filter(x=>x&&x.x),h=(S.hist[id]||[]).filter(x=>x.d!==dk());if(ss.length)h.push({d:dk(),s:ss.map(x=>({k:x.k,r:x.r}))});S.hist[id]=h.slice(-20)}
-function progHint(id,tg){const L=lastSess(id),top=repTop(tg);if(!L||!top)return '';const ks=L.s.map(x=>parseFloat(String(x.k).replace(',','.')));if(!L.s.every((x,i)=>+x.r>=top&&ks[i]>0))return '';return `\ud83d\udca1 Ostatnio ${top} powt. we wszystkich seriach \u2014 spr\u00f3buj ${+(Math.max(...ks)+2.5).toFixed(1)} kg`}
+function histSave(id){const ss=(D().s[id]||[]).filter(x=>x&&x.x),h=(S.hist[id]||[]).filter(x=>x.d!==dk());if(ss.length)h.push({d:dk(),s:ss.map(x=>({k:x.k,r:x.r}))});h.sort((a,b)=>a.d.localeCompare(b.d));S.hist[id]=h.slice(-20)}
+function progHint(id,tg){const L=lastSess(id),top=repTop(tg);if(!L||!top)return '';const ks=L.s.map(x=>parseFloat(String(x.k).replace(',','.')));if(!L.s.every((x,i)=>+x.r>=top&&ks[i]>0))return '';return `💡 Ostatnio ${top} powt. we wszystkich seriach — spróbuj ${+(Math.max(...ks)+2.5).toFixed(1)} kg`}
 const exName=id=>{for(const p of [...Object.values(W).map(x=>x[1]),...Object.values(S.cx)])for(const e of p)if(e[0]===id)return e[1];return id};
-function meCard(){const ks=Object.keys(S.me).sort(),l=S.me[ks.at(-1)]||{},f=S.me[ks[0]]||{};return `<div class="card"><div class="ct"><span>Obwody cia\u0142a (cm)</span><span class="badge">${ks.length} pomiar\u00f3w</span></div><div class="ir" style="margin:0">${MK.map(k=>`<input id="me-${k}" type="number" step="0.1" placeholder="${k}${l[k]?' '+l[k]:''}" inputmode="decimal">`).join('')}</div><button class="btn" id="mes" style="width:100%;margin-top:8px">Zapisz pomiar</button>${ks.length>1?`<div class="sub" style="margin-top:8px">${MK.filter(k=>l[k]&&f[k]).map(k=>`${k}: ${l[k]} (${(l[k]-f[k]>0?'+':'')+(l[k]-f[k]).toFixed(1)})`).join(' \u00b7 ')}</div>`:''}</div>`}
+function meCard(){const ks=Object.keys(S.me).sort(),l=S.me[ks.at(-1)]||{},f=S.me[ks[0]]||{};return `<div class="card"><div class="ct"><span>Obwody ciała (cm)</span><span class="badge">${ks.length} pomiarów</span></div><div class="ir" style="margin:0">${MK.map(k=>`<input id="me-${k}" type="number" step="0.1" placeholder="${k}${l[k]?' '+l[k]:''}" inputmode="decimal">`).join('')}</div><button class="btn" id="mes" style="width:100%;margin-top:8px">Zapisz pomiar</button>${ks.length>1?`<div class="sub" style="margin-top:8px">${MK.filter(k=>l[k]&&f[k]).map(k=>`${k}: ${l[k]} (${(l[k]-f[k]>0?'+':'')+(l[k]-f[k]).toFixed(1)})`).join(' · ')}</div>`:''}</div>`}
 const defSets=tg=>{const m=String(tg).match(/(\d)\D*rozgrz\.\s*\+\s*(\d)/);return m?+m[1]+ +m[2]:(parseInt(tg)||3)};
 const nSets=(id,tg)=>S.nc[id]??defSets(tg);
 function ring(v,m){const r=42,c=2*Math.PI*r,o=c*(1-Math.min(1,v/m));return `<svg class="ring" viewBox="0 0 100 100"><circle cx="50" cy="50" r="${r}" fill="none" stroke="var(--card2)" stroke-width="9"/><circle cx="50" cy="50" r="${r}" fill="none" stroke="${v>m?'var(--red)':'var(--acc)'}" stroke-width="9" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${o}" transform="rotate(-90 50 50)"/><text x="50" y="52" text-anchor="middle" style="fill:var(--text);font-size:20px;font-weight:800">${v}</text><text x="50" y="66" text-anchor="middle" style="font-size:8px">kcal</text></svg>`}
+const dual=w=>{const v=parseFloat(String(w).replace(',','.'));return v>0?`⚖︎ Łącznie ${v} kg = po ${+(v/2).toFixed(2)} kg na rękę`:'⚖︎ Wpisz łączny ciężar obu hantli'};
 // ---------- RENDER ----------
 function render(){
- const g=S.g,d=D(),t=tot(d),wt=lastW();
- $('#hsub').textContent=`${new Date().toLocaleDateString('pl-PL',{weekday:'long',day:'numeric',month:'long'})} · ${wt.toFixed(1)} kg ➔ ${g.target} kg`;
+ const g=S.g,d=D(),t=tot(d),wt=lastW(),isToday=curDate===todayKey();
+ const dispDate=new Date(curDate+'T12:00:00').toLocaleDateString('pl-PL',{weekday:'long',day:'numeric',month:'long'});
+ $('#hsub').textContent=`${dispDate} · ${wt.toFixed(1)} kg ➔ ${g.target} kg`;
+ const dtBtn=$('#dtoday'),dnBtn=$('#dnext');
+ if(dtBtn){dtBtn.textContent=isToday?'Dzisiaj':curDate;dtBtn.classList.toggle('today-pill',!isToday)}
+ if(dnBtn)dnBtn.disabled=isToday;
  // PULPIT
  const chk=(id,a,b,fn)=>`<div class="chk ${d.c[id]?'done':''}" data-c="${id}" ${fn?`data-fn="${fn}"`:''}><div class="cb">✓</div><div><b>${a}</b><small>${b}</small></div></div>`;
  const left=g.kcal-t.k;
  $('#t-home').innerHTML=`
- <div class="card"><div class="ct"><span>Bilans dnia</span><span class="badge">${pct(t.k,g.kcal)}%</span></div>
+ <div class="card"><div class="ct"><span>Bilans dnia ${isToday?'':`(${curDate})`}</span><span class="badge">${pct(t.k,g.kcal)}%</span></div>
   <div class="hero">${ring(t.k,g.kcal)}<div class="hs"><div class="row"><span>Kalorie</span><b>${t.k} / ${g.kcal}</b></div>${bar(t.k,g.kcal,t.k>g.kcal?'over':'')}<div class="row" style="margin-top:10px"><span>${left>=0?'Zostało':'Ponad cel'}</span><b>${Math.abs(left)} kcal</b></div></div></div>
   <div class="sub" style="margin-top:10px">Do celu białka brakuje ${Math.max(0,g.p-t.p)} g</div>${t.c||t.f?`<div class="sub">Węgl. ${t.c} g · tłuszcz ${t.f} g (tylko produkty z makrami)</div>`:''}
   <div class="grid2" style="margin-top:10px"><div class="box"><div class="row"><span>Białko</span><b>${t.p}/${g.p} g</b></div>${bar(t.p,g.p,'b')}</div>
@@ -187,22 +208,22 @@ function render(){
   ${chk('shM','Shake: 500 ml mleka 2% + WPC','Dolicza +370 kcal i +41 g białka; odznaczenie je odejmuje','shake')}
   ${chk('whey','Szejk WPC na wodzie (30 g)','Dolicza +120 kcal i +24 g białka; odznaczenie je odejmuje','shake')}</div>
  <div class="card"><div class="ct"><span>Waga</span><span class="badge">${(wt-g.target>0?'-':'')+Math.abs(wt-g.target).toFixed(1)} kg do celu</span></div>
-  <div class="ir" style="margin:0 0 10px"><input type="number" step="0.1" id="wi" placeholder="Dzisiejsza waga (kg)" inputmode="decimal"><button class="btn p" id="ws" style="flex:0 0 90px">Zapisz</button></div>${weightChart()}</div>
+  <div class="ir" style="margin:0 0 10px"><input type="number" step="0.1" id="wi" placeholder="Waga na dzień ${isToday?'dzisiejszy':curDate} (${S.wh[dk()]||wt} kg)" inputmode="decimal"><button class="btn p" id="ws" style="flex:0 0 90px">Zapisz</button></div>${weightChart()}</div>
  ${meCard()}<div class="card"><div class="ct"><span>Kalorie · ostatnie 7 dni</span></div>${weekChart()}</div>`;
  // TRENING
  const pl=S.wk,exs=planEx(pl),title=W[pl]?W[pl][0]:pl;let done=0,all=0;
  const pr=Object.entries(S.pr).sort((a,b)=>b[1]-a[1]).slice(0,6);
  $('#t-work').innerHTML=`<div class="pills">${plans().map(k=>`<button class="pill ${k===pl?'on':''}" data-wk="${esc(k)}">${esc(k)}</button>`).join('')}<button class="pill" data-addpl="1">+ Plan</button></div>
  <div class="card"><div class="ct"><span>${esc(title)}</span><span class="badge" id="wp"></span></div>
- <p class="sub" style="margin-bottom:10px">Ka\u017cda seria ma w\u0142asny ci\u0119\u017car i powt\u00f3rzenia. \u2713 zapisuje seri\u0119 i w\u0142\u0105cza timer. Przy hantlach wpisz \u0142\u0105czny ci\u0119\u017car obu.</p>
- ${exs.map(([id,n,tg,h,du,dw,cu])=>{const N=nSets(id,tg),L=lastSess(id),rg=repTop(tg),cur=d.s[id]||[],hint=progHint(id,tg);let rows='';
- for(let i=0;i<N;i++){const x=cur[i]||{},p=L?(L.s[i]||L.s.at(-1)):{};rows+=`<div class="sr"><span>S${i+1}</span><input data-sk="${id}|${i}" value="${esc(x.k??p.k??S.ew[id]??dw)}" inputmode="decimal" aria-label="kg"><input data-sk="${id}|${i}" value="${esc(x.r??'')}" placeholder="${p.r||rg||'powt.'}" inputmode="numeric" aria-label="powt."><button class="sb ${x.x?'on':''}" data-s="${id}|${i}">\u2713</button></div>`;if(x.x)done++}
+ <p class="sub" style="margin-bottom:10px">Każda seria ma własny ciężar i powtórzenia. ✓ zapisuje serię i włącza timer. Przy hantlach wpisz łączny ciężar obu.</p>
+ ${exs.map(([id,n,tg,h,du,dw,cu])=>{const N=nSets(id,tg),L=lastSess(id),rg=repTop(tg),cur=d.s[id]||[],hint=progHint(id,tg);let rows='',sampleW=dw;
+ for(let i=0;i<N;i++){const x=cur[i]||{},p=L?(L.s[i]||L.s.at(-1)):{},valK=x.k??p.k??S.ew[id]??dw;if(i===0||x.k)sampleW=valK;rows+=`<div class="sr"><span>S${i+1}</span><input data-sk="${id}|${i}" data-du="${du?1:0}" value="${esc(valK)}" inputmode="decimal" aria-label="kg"><input data-sk="${id}|${i}" value="${esc(x.r??'')}" placeholder="${p.r||rg||'powt.'}" inputmode="numeric" aria-label="powt."><button class="sb ${x.x?'on':''}" data-s="${id}|${i}">✓</button></div>`;if(x.x)done++}
  all+=N;
- return `<div class="ex"><div class="row"><b>${esc(n)}</b><span class="t">${esc(tg)}</span></div><div class="h">${L?'Ostatnio: '+L.s.map(x=>x.k+'\u00d7'+x.r).join(', '):cu?'W\u0142asne \u0107wiczenie':'Ostatnio: '+h}${S.pr[id]?` \u00b7 \ud83c\udfc6 e1RM ${S.pr[id].toFixed(1)}`:''}</div>${hint?`<div class="d">${hint}</div>`:''}
+ return `<div class="ex"><div class="row"><b>${esc(n)}</b><span class="t">${esc(tg)}</span></div><div class="h">${L?'Ostatnio: '+L.s.map(x=>x.k+'×'+x.r).join(', '):cu?'Własne ćwiczenie':'Ostatnio: '+h}${S.pr[id]?` · 🏆 e1RM ${S.pr[id].toFixed(1)}`:''}</div>${du?`<div class="du-note" id="du-${id}">${dual(sampleW)}</div>`:''}${hint?`<div class="d">${hint}</div>`:''}
  <div class="sr hd"><span></span><em>kg</em><em>powt.</em><span></span></div>${rows}
- <div class="mod"><span>Serie</span><button data-ns="${id}|-1">\u2212</button><b>${N}</b><button data-ns="${id}|1">+</button><button class="rm" data-hide="${id}">Usu\u0144</button></div></div>`}).join('')}
- <button class="btn p" data-addex="1" style="width:100%;margin-top:4px">+ Dodaj \u0107wiczenie</button>${Object.keys(S.hid).length?`<button class="btn" data-unhide="1" style="width:100%;margin-top:8px">Przywr\u00f3\u0107 usuni\u0119te (${Object.keys(S.hid).length})</button>`:''}${S.cpl[pl]?`<button class="btn" data-delpl="1" style="width:100%;margin-top:8px;color:var(--red)">Usu\u0144 ten plan</button>`:''}</div>
- <div class="card"><div class="ct"><span>\ud83c\udfc6 Rekordy (szac. 1RM)</span></div>${pr.length?pr.map(([id,v])=>`<div class="log"><span>${esc(exName(id))}</span><em>${v.toFixed(1)} kg</em></div>`).join(''):'<div class="empty">Rekordy pojawi\u0105 si\u0119 po zapisaniu serii z ci\u0119\u017carem i powt\u00f3rzeniami.</div>'}</div>`;
+ <div class="mod"><span>Serie</span><button data-ns="${id}|-1">−</button><b>${N}</b><button data-ns="${id}|1">+</button><button class="rm" data-hide="${id}">Usuń</button></div></div>`}).join('')}
+ <button class="btn p" data-addex="1" style="width:100%;margin-top:4px">+ Dodaj ćwiczenie</button>${Object.keys(S.hid).length?`<button class="btn" data-unhide="1" style="width:100%;margin-top:8px">Przywróć usunięte (${Object.keys(S.hid).length})</button>`:''}${S.cpl[pl]?`<button class="btn" data-delpl="1" style="width:100%;margin-top:8px;color:var(--red)">Usuń ten plan</button>`:''}</div>
+ <div class="card"><div class="ct"><span>🏆 Rekordy (szac. 1RM)</span></div>${pr.length?pr.map(([id,v])=>`<div class="log"><span>${esc(exName(id))}</span><em>${v.toFixed(1)} kg</em></div>`).join(''):'<div class="empty">Rekordy pojawią się po zapisaniu serii z ciężarem i powtórzeniami.</div>'}</div>`;
  $('#wp').textContent=`${done}/${all} serii`;
  // DIETA
  const q=($('#fs')?.value||'').toLowerCase().trim();
@@ -212,12 +233,12 @@ function render(){
   <div class="sh">Własny kafelek:</div><div class="ir" style="margin-top:0"><input id="cn" placeholder="Nazwa"><input class="n" id="ck" type="number" placeholder="kcal"><input class="n" id="cp" type="number" placeholder="B (g)"></div>
   <div class="ir"><input class="n" id="cc" type="number" placeholder="W (g)"><input class="n" id="cf" type="number" placeholder="T (g)"></div><div class="sub" style="margin-top:6px">W/T opcjonalne. „Porcja” = wartości na 1 porcję, „Na 100 g” = pytam o gramy przy dodawaniu.</div><div class="ir"><button class="btn pu" id="ca">+ Porcja</button><button class="btn pu" id="cg">+ Na 100 g</button></div></div>
  <div id="fr"></div>
- <div class="card"><div class="ct"><span>Dziennik dziś (${d.f.length})</span><span style="color:var(--red);font-size:.75rem;font-weight:700;cursor:pointer" data-undo="1">↩ Cofnij</span></div>
+ <div class="card"><div class="ct"><span>Dziennik ${isToday?'dziś':curDate} (${d.f.length})</span><span style="color:var(--red);font-size:.75rem;font-weight:700;cursor:pointer" data-undo="1">↩ Cofnij</span></div>
  ${d.f.length?d.f.map((x,i)=>`<div class="log"><span><b style="color:var(--muted)">${x.t}</b> ${esc(x.n)}</span><span style="display:flex;gap:6px;align-items:center"><em>${x.k} kcal · ${x.p} g</em><button class="x" data-del="${i}">✕</button></span></div>`).join(''):'<div class="empty">Brak wpisów — wybierz posiłek powyżej.</div>'}</div>`;
  renderFoods();
  // RUCH
  const wk=S.runs.filter(r=>(Date.now()-r.ts)<7*864e5).reduce((a,r)=>a+r.km,0);
- $('#t-act').innerHTML=`<div class="card"><div class="ct"><span>Kroki</span><span class="badge">${d.st}/${g.steps}</span></div>${bar(d.st,g.steps)}
+ $('#t-act').innerHTML=`<div class="card"><div class="ct"><span>Kroki ${isToday?'':`(${curDate})`}</span><span class="badge">${d.st}/${g.steps}</span></div>${bar(d.st,g.steps)}
   <div class="ir"><button class="btn" data-st="1000">+1000</button><button class="btn" data-st="2000">+2000</button><button class="btn" data-st="-1000">−1000</button></div>
   <div class="ir"><input id="sti" type="number" placeholder="Ustaw dokładnie" inputmode="numeric"><button class="btn p" id="sts" style="flex:0 0 90px">Ustaw</button></div></div>
  <div class="card"><div class="ct"><span>Aktywność</span><span class="badge">NEAT & cardio</span></div>${chk('wf','Zajęcia WF','Odhacz w dzień zajęć (3-4× w tygodniu)')}${chk('run','Bieganie na zewnątrz','Zaznacza się samo po dodaniu biegu')}</div>
@@ -225,7 +246,6 @@ function render(){
   <div class="ir" style="margin-top:0"><input id="rk" type="number" step="0.1" placeholder="km" inputmode="decimal"><input id="rm" type="number" placeholder="min" inputmode="numeric"><button class="btn p" id="ra">Dodaj</button></div>
   <div style="margin-top:8px">${S.runs.length?S.runs.map((r,i)=>`<div class="log"><span>📅 ${r.date} · <b>${r.km} km</b>${r.min?` · ${r.min} min · ${(r.min/r.km).toFixed(1)} min/km`:''}</span><button class="x" data-rd="${i}">✕</button></div>`).join(''):'<div class="empty">Brak zapisanych biegów.</div>'}</div></div>`;
 }
-const dual=w=>{const v=parseFloat(String(w).replace(',','.'));return v>0?`⚖︎ Łącznie ${v} kg = po ${+(v/2).toFixed(2)} kg na rękę`:'⚖︎ Wpisz łączny ciężar obu hantli'};
 function renderFoods(){const q=($('#fs')?.value||'').toLowerCase().trim(),all=ALL(),el=$('#fr');
  const tile=(f,i)=>`<button class="tile ${f.g==='cu'?'cu':''}" data-f="${i}"><b>${f.e} ${esc(f.n)}</b><span>${f.k} kcal · ${f.p} g B${f.u?' /100 g':''}</span></button>`;
  const grid=l=>`<div class="grid2">${l.map(x=>tile(x,all.indexOf(x))).join('')}</div>`;
@@ -238,8 +258,9 @@ function renderFoods(){const q=($('#fs')?.value||'').toLowerCase().trim(),all=AL
  el.innerHTML=rec+`<div class="pills">${CATS.map(([k,l])=>`<button class="pill ${S.cat===k?'on':''}" data-cat="${k}">${l}</button>`).join('')}</div><div class="card">${body}</div>`}
 // ---------- ZDARZENIA ----------
 document.addEventListener('click',e=>{
- const c=e.target.closest('[data-c],[data-w],[data-wk],[data-s],[data-f],[data-r],[data-m],[data-cat],[data-undo],[data-del],[data-st],[data-rd],[data-ct],[data-t],[data-ns],[data-hide],[data-unhide],[data-addex],[data-addpl],[data-delpl],#mes,#cg,#ws,#ca,#ra,#sts,#setBtn');if(!c)return;
+ const c=e.target.closest('[data-dd],[data-c],[data-w],[data-wk],[data-s],[data-f],[data-r],[data-m],[data-cat],[data-undo],[data-del],[data-st],[data-rd],[data-ct],[data-t],[data-ns],[data-hide],[data-unhide],[data-addex],[data-addpl],[data-delpl],#mes,#cg,#ws,#ca,#ra,#sts,#setBtn');if(!c)return;
  const d=D(),ds=c.dataset;
+ if(ds.dd!==undefined){shiftDate(parseInt(ds.dd));render();return}
  if(ds.t){S.tab=ds.t;document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x.id==='t-'+ds.t));document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x===c));scrollTo(0,0);return}
  if(ds.c){ds.fn==='shake'?toggleShake(ds.c):(d.c[ds.c]=!d.c[ds.c],save());return}
  if(ds.w){d.w=Math.max(0,+(d.w+parseFloat(ds.w)).toFixed(2));save()}
@@ -258,7 +279,7 @@ document.addEventListener('click',e=>{
  else if(ds.ct!==undefined){S.tiles.splice(ds.ct,1);save()}
  else if(c.id==='ws'){const v=parseFloat($('#wi').value.replace(',','.'));if(v>40&&v<250){S.wh[dk()]=v;save()}}
  else if(c.id==='ca'||c.id==='cg'){const n=$('#cn').value.trim(),k=parseInt($('#ck').value)||0,p=parseInt($('#cp').value)||0;if(!n||(!k&&!p))return;S.tiles.push({n,k,p,c:parseFloat($('#cc').value)||0,f:parseFloat($('#cf').value)||0,u:c.id==='cg'?100:0});S.cat='cu';save()}
- else if(c.id==='ra'){const km=parseFloat($('#rk').value.replace(',','.'));if(!(km>0))return;S.runs.unshift({date:new Date().toLocaleDateString('pl-PL',{day:'2-digit',month:'2-digit'}),km,min:parseInt($('#rm').value)||0,ts:Date.now()});d.c.run=true;save()}
+ else if(c.id==='ra'){const km=parseFloat($('#rk').value.replace(',','.'));if(!(km>0))return;S.runs.unshift({date:new Date(curDate+'T12:00:00').toLocaleDateString('pl-PL',{day:'2-digit',month:'2-digit'}),km,min:parseInt($('#rm').value)||0,ts:new Date(curDate+'T12:00:00').getTime()});d.c.run=true;save()}
  else if(c.id==='sts'){const v=parseInt($('#sti').value);if(v>=0){d.st=v;save()}}
  else if(ds.ns){const[id,dl]=ds.ns.split('|'),e=planEx(S.wk).find(x=>x[0]===id);S.nc[id]=Math.min(10,Math.max(1,nSets(id,e?e[2]:'3')+ +dl));save()}
  else if(ds.hide){if(!confirm('Usunąć ćwiczenie z planu?'))return;const cx=S.cx[S.wk]||[],i=cx.findIndex(x=>x[0]===ds.hide);i>=0?cx.splice(i,1):S.hid[ds.hide]=1;save()}
@@ -271,17 +292,24 @@ document.addEventListener('click',e=>{
 });
 document.addEventListener('input',e=>{const t=e.target;
  if(t.id==='fs')renderFoods();
- if(t.dataset.sk){const[id,i]=t.dataset.sk.split('|'),[k,r]=t.parentElement.querySelectorAll('input'),d=D();d.s[id]=d.s[id]||[];d.s[id][i]={...d.s[id][i],k:k.value,r:r.value};try{localStorage.setItem(KEY,JSON.stringify(S))}catch(x){}}});
+ if(t.dataset.sk){const[id,i]=t.dataset.sk.split('|'),[k,r]=t.parentElement.querySelectorAll('input'),d=D();d.s[id]=d.s[id]||[];d.s[id][i]={...d.s[id][i],k:k.value,r:r.value};
+  if(t.dataset.du==='1'){const duEl=$('#du-'+id);if(duEl)duEl.textContent=dual(k.value)}
+  try{localStorage.setItem(KEY,JSON.stringify(S))}catch(x){}}});
 function openSettings(){const g=S.g,dl=$('#dlg');
  dl.innerHTML=`<div class="ct"><span>Cele i dane</span><button class="x" style="position:static;font-size:1.1rem" id="dx">✕</button></div>
  ${[['kcal','Kalorie (kcal)'],['p','Białko (g)'],['water','Woda (L)'],['steps','Kroki'],['start','Waga startowa (kg)'],['target','Waga docelowa (kg)']].map(([k,l])=>`<label>${l}</label><input data-g="${k}" type="number" step="any" value="${g[k]}">`).join('')}
- <label>Kopia zapasowa (JSON) — skopiuj lub wklej, aby przywrócić</label><textarea id="bk">${esc(JSON.stringify(S))}</textarea>
- <div class="ir"><button class="btn p" id="gs">Zapisz cele</button><button class="btn" id="gi">Przywróć z JSON</button></div>
+ <label>Kopia zapasowa do pliku (.json)</label>
+ <div class="ir" style="margin-top:4px"><button class="btn" id="gf_dl">📥 Pobierz .json</button><button class="btn" id="gf_ul">📤 Wczytaj .json</button><input type="file" id="gf_in" accept=".json,application/json" style="display:none"></div>
+ <label>Lub skopiuj / wklej tekst JSON ręcznie</label><textarea id="bk">${esc(JSON.stringify(S))}</textarea>
+ <div class="ir"><button class="btn p" id="gs">Zapisz cele</button><button class="btn" id="gi">Przywróć z pola</button></div>
  <button class="btn" id="gr" style="width:100%;margin-top:8px;color:var(--red)">Usuń wszystkie dane</button>`;
  dl.showModal();
  $('#dx').onclick=()=>dl.close();
  $('#gs').onclick=()=>{dl.querySelectorAll('[data-g]').forEach(i=>{const v=parseFloat(i.value);if(v>0)S.g[i.dataset.g]=v});dl.close();save()};
  $('#gi').onclick=()=>{try{S={...def(),...JSON.parse($('#bk').value)};dl.close();save()}catch(x){alert('Niepoprawny JSON')}};
+ $('#gf_dl').onclick=()=>{const b=new Blob([JSON.stringify(S,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`recomp-backup-${todayKey()}.json`;a.click();URL.revokeObjectURL(a.href)};
+ $('#gf_ul').onclick=()=>$('#gf_in').click();
+ $('#gf_in').onchange=ev=>{const f=ev.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{S={...def(),...JSON.parse(r.result)};dl.close();save()}catch(x){alert('Niepoprawny plik JSON')}};r.readAsText(f)};
  $('#gr').onclick=()=>{if(confirm('Usunąć wszystkie dane? Tego nie da się cofnąć.')){S=def();dl.close();save()}}}
 function openAddEx(){const dl=$('#dlg');let du=0;
  dl.innerHTML=`<div class="ct"><span>Nowe ćwiczenie · ${S.wk}</span><button class="x" style="position:static;font-size:1.1rem" id="dx">✕</button></div><label>Nazwa</label><input id="xn" placeholder="np. Face pull"><div class="ir"><div><label>Ciężar (kg)</label><input id="xw" placeholder="BW" inputmode="decimal"></div><div><label>Serie</label><input id="xs" type="number" value="3" inputmode="numeric"></div><div><label>Powt.</label><input id="xr" placeholder="8-12"></div></div><div class="chk" id="xd" style="margin-top:12px"><div class="cb">✓</div><div><b>Ćwiczenie z 2 hantlami</b><small>Pokaż przelicznik na jedną rękę</small></div></div><button class="btn p" id="xa" style="width:100%;margin-top:4px">Dodaj do planu</button>`;
